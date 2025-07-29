@@ -1,0 +1,47 @@
+#!/bin/bash
+
+# Script para desplegar en Render
+echo "🚀 Preparando proyecto para Render..."
+
+# Verificar que estamos en el directorio correcto
+if [ ! -f "app.py" ]; then
+    echo "❌ Error: app.py no encontrado. Ejecuta este script desde el directorio del proyecto."
+    exit 1
+fi
+
+echo "✅ Estructura del proyecto verificada"
+
+# Verificar archivos necesarios para Render
+files=("app.py" "requirements.txt" "Procfile" "runtime.txt")
+for file in "${files[@]}"; do
+    if [ -f "$file" ]; then
+        echo "✅ $file encontrado"
+    else
+        echo "❌ $file no encontrado"
+        exit 1
+    fi
+done
+
+echo ""
+echo "🎯 Archivos listos para Render:"
+echo "   - app.py (aplicación principal)"
+echo "   - requirements.txt (dependencias)"
+echo "   - Procfile (comando de inicio)"
+echo "   - runtime.txt (versión de Python)"
+echo "   - RENDER_DEPLOY.md (instrucciones)"
+echo ""
+
+echo "📋 Próximos pasos:"
+echo "1. Sube el código a GitHub:"
+echo "   git init"
+echo "   git add ."
+echo "   git commit -m 'API lista para Render'"
+echo "   git branch -M main"
+echo "   git remote add origin https://github.com/tu-usuario/transcribe-audio-api.git"
+echo "   git push -u origin main"
+echo ""
+echo "2. Ve a render.com y crea un nuevo Web Service"
+echo "3. Conecta tu repositorio de GitHub"
+echo "4. Usa la configuración de RENDER_DEPLOY.md"
+echo ""
+echo "✨ ¡Tu API estará lista en Render!"

@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Transcripción de Audio a PDF</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #f5f5f5;
+      }
+      .container {
+        background-color: white;
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+      h1 {
+        color: #333;
+        text-align: center;
+        margin-bottom: 30px;
+      }
+      .form-group {
+        margin-bottom: 20px;
+      }
+      label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+        color: #555;
+      }
+      input[type="file"],
+      select {
+        width: 100%;
+        padding: 10px;
+        border: 2px solid #ddd;
+        border-radius: 5px;
+        font-size: 16px;
+      }
+      input[type="file"]:focus,
+      select:focus {
+        border-color: #4caf50;
+        outline: none;
+      }
+      .submit-btn {
+        background-color: #4caf50;
+        color: white;
+        padding: 12px 30px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 16px;
+        width: 100%;
+        margin-top: 20px;
+      }
+      .submit-btn:hover {
+        background-color: #45a049;
+      }
+      .submit-btn:disabled {
+        background-color: #cccccc;
+        cursor: not-allowed;
+      }
+      .download-btn {
+        background-color: #2196f3;
+        color: white;
+        padding: 15px 25px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 16px;
+        font-weight: bold;
+        margin-top: 15px;
+        display: block;
+        width: 100%;
+        transition: background-color 0.3s ease;
+      }
+      .download-btn:hover {
+        background-color: #1976d2;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      }
+      .download-container {
+        margin-top: 20px;
+        padding: 15px;
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        border: 2px solid #2196f3;
+      }
+      .info-box {
+        background-color: #e7f3ff;
+        border: 1px solid #b3d9ff;
+        border-radius: 5px;
+        padding: 15px;
+        margin-bottom: 20px;
+      }
+      .info-box h3 {
+        margin-top: 0;
+        color: #0066cc;
+      }
+      .formats {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 10px;
+      }
+      .format-tag {
+        background-color: #f0f0f0;
+        padding: 3px 8px;
+        border-radius: 3px;
+        font-size: 12px;
+        color: #666;
+      }
+      .status {
+        margin-top: 20px;
+        padding: 10px;
+        border-radius: 5px;
+        display: none;
+      }
+      .status.success {
+        background-color: #d4edda;
+        border: 1px solid #c3e6cb;
+        color: #155724;
+      }
+      .status.error {
+        background-color: #f8d7da;
+        border: 1px solid #f5c6cb;
+        color: #721c24;
+      }
+      .status.info {
+        background-color: #d1ecf1;
+        border: 1px solid #bee5eb;
+        color: #0c5460;
+      }
+      .progress {
+        display: none;
+        margin-top: 20px;
+      }
+      .progress-bar {
+        width: 100%;
+        height: 20px;
+        background-color: #f0f0f0;
+        border-radius: 10px;
+        overflow: hidden;
+      }
+      .progress-fill {
+        height: 100%;
+        background-color: #4caf50;
+        width: 0%;
+        transition: width 0.3s ease;
+        border-radius: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>🎵 Transcripción de Audio a PDF/DOCX - Optimizada para Español</h1>
+      <div class="info-box">
+        <h3>ℹ️ Información</h3>
+        <p><strong>Idioma:</strong> Optimizado para Español 🇪🇸</p>
+        <p><strong>Tamaño máximo:</strong> 1GB</p>
+        <p><strong>Formatos soportados:</strong></p>
+        <div class="formats">
+          <span class="format-tag">MP3</span>
+          <span class="format-tag">WAV</span>
+          <span class="format-tag">FLAC</span>
+          <span class="format-tag">M4A</span>
+          <span class="format-tag">AAC</span>
+          <span class="format-tag">OGG</span>
+          <span class="format-tag">WMA</span>
+          <span class="format-tag">MP4</span>
+          <span class="format-tag">AVI</span>
+          <span class="format-tag">MOV</span>
+          <span class="format-tag">MKV</span>
+          <span class="format-tag">WEBM</span>
+        </div>
+      </div>
+
+      <form
+        id="transcribeForm"
+        action=""
+        method="post"
+        enctype="multipart/form-data"
+      >
+        <div class="form-group">
+          <label for="audio">📁 Seleccionar archivo de audio/video:</label>
+          <input
+            type="file"
+            id="audio"
+            name="audio"
+            accept="audio/*,video/*"
+            required
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="format">📄 Formato de salida:</label>
+          <select id="format" name="format">
+            <option value="pdf">PDF (Recomendado)</option>
+            <option value="docx">DOCX (Microsoft Word)</option>
+          </select>
+        </div>
+
+        <button type="submit" class="submit-btn" id="submitBtn">
+          🚀 Transcribir Audio
+        </button>
+      </form>
+
+      <div class="progress" id="progress">
+        <p>Procesando archivo... Esto puede tomar varios minutos.</p>
+        <div class="progress-bar">
+          <div class="progress-fill" id="progressFill"></div>
+        </div>
+      </div>
+
+      <div class="status" id="status"></div>
+    </div>
+
+    <script>
+      const form = document.getElementById("transcribeForm");
+      const submitBtn = document.getElementById("submitBtn");
+      const status = document.getElementById("status");
+      const progress = document.getElementById("progress");
+      const progressFill = document.getElementById("progressFill");
+      const fileInput = document.getElementById("audio");
+
+      // Actualizar texto del botón según el archivo seleccionado
+      fileInput.addEventListener("change", function () {
+        if (this.files.length > 0) {
+          const file = this.files[0];
+          const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
+          submitBtn.textContent = `🚀 Transcribir ${file.name} (${sizeMB} MB)`;
+        } else {
+          submitBtn.textContent = "🚀 Transcribir Audio";
+        }
+      });
+
+      form.addEventListener("submit", function (e) {
+        e.preventDefault();
+
+        const fileInput = document.getElementById("audio");
+        const file = fileInput.files[0];
+
+        if (!file) {
+          showStatus("error", "❌ Por favor selecciona un archivo de audio.");
+          return;
+        }
+
+        // Verificar tamaño del archivo (1GB = 1073741824 bytes)
+        if (file.size > 1073741824) {
+          showStatus(
+            "error",
+            "❌ El archivo es demasiado grande. Máximo permitido: 1GB"
+          );
+          return;
+        }
+
+        // Mostrar progreso
+        submitBtn.disabled = true;
+        submitBtn.textContent = "⏳ Procesando...";
+        showProgress();
+        hideStatus();
+
+        // Simular progreso
+        let progressValue = 0;
+        const progressInterval = setInterval(() => {
+          progressValue += Math.random() * 10;
+          if (progressValue > 90) progressValue = 90;
+          progressFill.style.width = progressValue + "%";
+        }, 1000);
+
+        // Crear FormData y enviar
+        const formData = new FormData();
+        formData.append("audio", file);
+        formData.append("format", document.getElementById("format").value);
+
+        fetch(form.action, {
+          method: "POST",
+          body: formData,
+        })
+          .then((response) => {
+            clearInterval(progressInterval);
+            progressFill.style.width = "100%";
+
+            if (response.ok) {
+              return response.blob().then((blob) => {
+                // Obtener nombre del archivo de los headers
+                const contentDisposition = response.headers.get(
+                  "Content-Disposition"
+                );
+                let filename = "transcripcion.pdf";
+                if (contentDisposition) {
+                  const filenameMatch =
+                    contentDisposition.match(/filename="(.+)"/);
+                  if (filenameMatch) {
+                    filename = filenameMatch[1];
+                  }
+                }
+
+                // Mostrar mensaje de éxito
+                showStatus(
+                  "success",
+                  `✅ ¡Transcripción completada exitosamente!`
+                );
+
+                // Crear contenedor para el botón de descarga
+                const downloadContainer = document.createElement("div");
+                downloadContainer.className = "download-container";
+                downloadContainer.style.marginTop = "20px";
+                downloadContainer.style.textAlign = "center";
+
+                // Crear botón de descarga
+                const downloadBtn = document.createElement("button");
+                downloadBtn.textContent = `📥 DESCARGAR PDF: ${filename}`;
+                downloadBtn.className = "download-btn";
+                downloadBtn.style.backgroundColor = "#2196f3";
+                downloadBtn.style.fontSize = "18px";
+                downloadBtn.style.fontWeight = "bold";
+                downloadBtn.style.padding = "15px 30px";
+                downloadBtn.style.border = "none";
+                downloadBtn.style.borderRadius = "8px";
+                downloadBtn.style.color = "white";
+                downloadBtn.style.cursor = "pointer";
+                downloadBtn.style.width = "100%";
+                downloadBtn.style.display = "block";
+
+                downloadBtn.onclick = function () {
+                  console.log("Botón de descarga clickeado");
+                  // Crear descarga
+                  const url = window.URL.createObjectURL(blob);
+                  const a = document.createElement("a");
+                  a.href = url;
+                  a.download = filename;
+                  a.style.display = "none";
+
+                  document.body.appendChild(a);
+                  a.click();
+
+                  // Limpiar después de la descarga
+                  setTimeout(() => {
+                    document.body.removeChild(a);
+                    window.URL.revokeObjectURL(url);
+                  }, 100);
+
+                  showStatus(
+                    "success",
+                    `✅ Archivo "${filename}" descargado correctamente!`
+                  );
+                };
+
+                // Agregar botón al contenedor y contenedor al DOM
+                downloadContainer.appendChild(downloadBtn);
+
+                // Agregar después del área de status
+                setTimeout(() => {
+                  const container = document.querySelector(".container");
+                  container.appendChild(downloadContainer);
+                  console.log("Botón de descarga agregado al DOM");
+                }, 500);
+              });
+            } else {
+              return response.json().then((errorData) => {
+                throw new Error(errorData.error || "Error desconocido");
+              });
+            }
+          })
+          .catch((error) => {
+            clearInterval(progressInterval);
+            console.error("Error:", error);
+            showStatus("error", `❌ Error: ${error.message}`);
+          })
+          .finally(() => {
+            submitBtn.disabled = false;
+            submitBtn.textContent = "🚀 Transcribir Audio";
+            hideProgress();
+          });
+      });
+
+      function showStatus(type, message) {
+        status.className = `status ${type}`;
+        status.textContent = message;
+        status.style.display = "block";
+
+        // Auto-hide success messages after 5 seconds
+        if (type === "success") {
+          setTimeout(() => {
+            if (status.textContent === message) {
+              hideStatus();
+            }
+          }, 5000);
+        }
+      }
+      function hideStatus() {
+        status.style.display = "none";
+        // Limpiar botones de descarga previos SOLO si no es un mensaje de éxito
+        const existingDownloadContainers = document.querySelectorAll(
+          ".download-container"
+        );
+        existingDownloadContainers.forEach((container) => container.remove());
+      }
+      function showProgress() {
+        progress.style.display = "block";
+        progressFill.style.width = "0%";
+      }
+
+      function hideProgress() {
+        progress.style.display = "none";
+      }
+
+      // Configuración de la API - se adapta automáticamente a desarrollo y producción
+      const API_BASE_URL =
+        window.location.hostname === "localhost"
+          ? "http://localhost:5000"
+          : `${window.location.protocol}//${window.location.host}`;
+
+      console.log("🔗 API Base URL:", API_BASE_URL);
+
+      // Verificar estado de la API al cargar la página
+      fetch(`${API_BASE_URL}/health`)
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+          }
+          return response.json();
+        })
+        .then((data) => {
+          if (data.status === "OK") {
+            showStatus("success", "✅ API conectada y lista para usar.");
+            // Auto-hide después de 3 segundos
+            setTimeout(() => {
+              hideStatus();
+            }, 3000);
+          } else {
+            throw new Error("Estado de API no válido");
+          }
+        })
+        .catch((error) => {
+          console.error("Error conectando con API:", error);
+          showStatus(
+            "error",
+            "❌ No se puede conectar con la API. Asegúrate de que esté ejecutándose en: " +
+              API_BASE_URL
+          );
+        });
+
+      // Configurar el formulario para usar la URL dinámica
+      document.addEventListener("DOMContentLoaded", function () {
+        const form = document.getElementById("transcribeForm");
+        if (form) {
+          form.action = `${API_BASE_URL}/transcribe`;
+          console.log("📝 Formulario configurado para:", form.action);
+        }
+      });
+    </script>
+  </body>
+</html>
