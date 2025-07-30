@@ -4,12 +4,8 @@ Utiliza OpenAI Whisper para la transcripción y python-docx/reportlab para gener
 """
 
 import os
-import tempfile
 import subprocess
 import sys
-import shutil
-import wave
-import struct
 from flask import Flask, request, jsonify, send_file
 from werkzeug.utils import secure_filename
 import whisper
