@@ -7,6 +7,7 @@ import os
 import subprocess
 import sys
 from flask import Flask, request, jsonify, send_file
+from flask_cors import CORS
 from werkzeug.utils import secure_filename
 import whisper
 from docx import Document
@@ -63,6 +64,13 @@ def setup_ffmpeg():
     return True
 
 app = Flask(__name__)
+
+# Configurar CORS para permitir peticiones desde cualquier origen
+CORS(app, resources={
+    r"/health": {"origins": "*"},
+    r"/api": {"origins": "*"},
+    r"/transcribe": {"origins": "*"}
+})
 
 # Configuración
 app.config['MAX_CONTENT_LENGTH'] = 1024 * 1024 * 1024  # 1GB máximo
@@ -368,7 +376,17 @@ def create_docx(text, output_path, metadata=None):
 
 @app.route('/', methods=['GET'])
 def index():
-    """Endpoint de información"""
+    """Endpoint principal - sirve la página web"""
+    try:
+        return send_file('index.html')
+    except FileNotFoundError:
+        # Fallback a información JSON si no existe index.html
+        return get_api_info()
+
+@app.route('/api', methods=['GET'])
+@app.route('/info', methods=['GET'])
+def get_api_info():
+    """Endpoint de información de la API"""
     # Determinar qué modelo está cargado
     model_info = f"{MODEL} (excelente precisión)"
     if hasattr(model, 'dims') and hasattr(model.dims, 'n_vocab'):
@@ -389,8 +407,10 @@ def index():
         'language': 'spanish',
         'model': model_info,
         'endpoints': {
-            'POST /transcribe': 'Transcribir archivo de audio en español a PDF',
-            'GET /health': 'Verificar estado de la API'
+            'GET /': 'Página principal web',
+            'GET /api': 'Información de la API (JSON)',
+            'GET /health': 'Verificar estado de la API',
+            'POST /transcribe': 'Transcribir archivo de audio en español a PDF'
         },
         'supported_formats': list(ALLOWED_EXTENSIONS),
         'max_file_size': '1GB'
@@ -543,7 +563,7 @@ if __name__ == '__main__':
     print("  curl -X POST -F 'audio=@archivo.mp3' -F 'format=pdf' http://localhost:5000/transcribe")
     
     # Configuración específica para Render
-    port = int(os.environ.get('PORT', 10000))  # Render usa puerto 10000
+    port = int(os.environ.get('PORT', 5000))  # Render usa puerto 5000
     debug_mode = os.environ.get('FLASK_ENV') == 'development'
     
     print(f"Iniciando servidor en puerto: {port}")

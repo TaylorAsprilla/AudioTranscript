@@ -180,7 +180,7 @@
 
       <form
         id="transcribeForm"
-        action=""
+        action="http://localhost:5000/transcribe"
         method="post"
         enctype="multipart/form-data"
       >
@@ -275,6 +275,10 @@
         const formData = new FormData();
         formData.append("audio", file);
         formData.append("format", document.getElementById("format").value);
+
+        console.log("🚀 Enviando transcripción a:", form.action);
+        console.log("📁 Archivo:", file.name, "Tamaño:", file.size, "bytes");
+        console.log("📄 Formato:", document.getElementById("format").value);
 
         fetch(form.action, {
           method: "POST",
@@ -410,12 +414,30 @@
       }
 
       // Configuración de la API - se adapta automáticamente a desarrollo y producción
-      const API_BASE_URL =
-        window.location.hostname === "localhost"
-          ? "http://localhost:5000"
-          : `${window.location.protocol}//${window.location.host}`;
+      const API_BASE_URL = (function () {
+        // Si estamos en protocolo file://, usar localhost:5000
+        if (window.location.protocol === "file:") {
+          return "http://localhost:5000";
+        }
+        // Si estamos en localhost en el navegador, usar localhost:5000
+        if (
+          window.location.hostname === "localhost" ||
+          window.location.hostname === "127.0.0.1"
+        ) {
+          return "http://localhost:5000";
+        }
+        // Para producción, usar la URL actual
+        return `${window.location.protocol}//${window.location.host}`;
+      })();
 
       console.log("🔗 API Base URL:", API_BASE_URL);
+
+      // Configurar el formulario para usar la URL dinámica INMEDIATAMENTE
+      const transcribeForm = document.getElementById("transcribeForm");
+      if (transcribeForm) {
+        transcribeForm.action = `${API_BASE_URL}/transcribe`;
+        console.log("📝 Formulario configurado para:", transcribeForm.action);
+      }
 
       // Verificar estado de la API al cargar la página
       fetch(`${API_BASE_URL}/health`)
@@ -444,15 +466,6 @@
               API_BASE_URL
           );
         });
-
-      // Configurar el formulario para usar la URL dinámica
-      document.addEventListener("DOMContentLoaded", function () {
-        const form = document.getElementById("transcribeForm");
-        if (form) {
-          form.action = `${API_BASE_URL}/transcribe`;
-          console.log("📝 Formulario configurado para:", form.action);
-        }
-      });
     </script>
   </body>
 </html>

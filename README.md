@@ -1,54 +1,79 @@
-# API de Transcripción de Audio a PDF
+# 🎙️ AudioTranscript - API de Transcripción de Audio
 
 Una API REST desarrollada en Flask que permite transcribir archivos de audio en español y convertirlos a documentos PDF o DOCX utilizando OpenAI Whisper.
 
-## Características
+## ✨ Características
 
-- Transcripción de audio usando OpenAI Whisper optimizada para español
-- Soporte para múltiples formatos de audio (MP3, WAV, FLAC, M4A, AAC, OGG, WMA, MP4, AVI, MOV, MKV, WEBM)
-- Generación de documentos PDF y DOCX
-- Idioma configurado: Español 🇪🇸
-- Soporte para archivos de hasta 1GB
-- API REST fácil de usar
+- 🎯 **Transcripción optimizada para español** con modelo Whisper Medium
+- 📁 **Múltiples formatos de audio** (MP3, WAV, FLAC, M4A, AAC, OGG, WMA, MP4, AVI, MOV, MKV, WEBM)
+- 📄 **Generación de PDF y DOCX** con metadatos profesionales
+- 🚀 **Archivos grandes** - Soporte hasta 1GB
+- 🌐 **Interfaz web moderna** con drag & drop
+- 🔧 **API REST completa** fácil de integrar
+- ☁️ **Listo para Render** - Deploy automático
 
-## Estructura del Proyecto
+## 📁 Estructura Optimizada
 
 ```
 transcribeAudio/
-├── app.py                 # Aplicación Flask principal
-├── requirements.txt       # Dependencias de Python
-├── test_client.html       # Cliente web para transcripciones
-├── README.md              # Documentación del proyecto
-├── start.bat/.sh          # Scripts de inicio
-├── uploads/               # Archivos temporales (se limpian automáticamente)
-├── outputs/               # PDFs generados (se descargan al usuario)
-└── venv/                  # Entorno virtual de Python
+├── 🐍 app.py               # API Flask principal con CORS
+├── 🌐 index.html           # Interfaz web profesional
+├── 🧪 test_client.html     # Cliente alternativo para testing
+├── 📦 requirements.txt     # Dependencias optimizadas
+├── 📖 README.md            # Documentación completa
+├── 🚀 Procfile             # Configuración para Render
+├── 🐍 runtime.txt          # Python 3.11.8 para Render
+├── 🔧 start.bat/start.sh   # Scripts de desarrollo local
+├── ⚙️ .gitignore           # Configuración Git
+├── 📁 uploads/             # Temporal (se limpia automáticamente)
+├── 📁 outputs/             # Temporal (se limpia automáticamente)
+├── 🐍 venv/                # Entorno virtual para desarrollo
+└── 📂 .git/                # Control de versiones
 ```
 
-## Archivos Principales
+## 🚀 Uso Rápido
 
-- **`app.py`**: Aplicación principal con la API Flask
-- **`test_client.html`**: Interfaz web para usar la API
-- **`requirements.txt`**: Lista de dependencias necesarias
-- **`start.bat`/`start.sh`**: Scripts para iniciar la aplicación fácilmente
+### **Desarrollo Local**
 
-## Instalación
+**Windows:**
 
-### Prerrequisitos
+```bash
+start.bat
+```
 
-- Python 3.8 o superior
-- pip
-- FFmpeg (se instala automáticamente)
+**Linux/Mac:**
 
-### Instalación Automática (Recomendado)
+```bash
+chmod +x start.sh
+./start.sh
+```
 
-La forma más fácil es usar uno de los scripts de inicio que configuran todo automáticamente:
+**Manual:**
 
-**Para Windows:**
+```bash
+pip install -r requirements.txt
+python app.py
+```
 
-- **setup_and_run.bat** - Para Command Prompt
-- **start_api.ps1** - Para PowerShell
-- **start_api.sh** - Para Git Bash/WSL
+### **Acceso Web**
+
+- **Interfaz principal**: `http://localhost:5000`
+- **Cliente de testing**: Abrir `test_client.html` en el navegador
+
+## ☁️ Deploy en Render
+
+### **Configuración automática:**
+
+1. Conecta tu repositorio a Render
+2. Render detectará automáticamente:
+   - `Procfile` → Comando de inicio
+   - `requirements.txt` → Dependencias
+   - `runtime.txt` → Python 3.11.8
+
+### **Variables de entorno (opcionales):**
+
+- `FLASK_ENV=production` (automático en Render)
+- `PORT` (automático en Render)
 
 ```bash
 # Doble clic en cualquiera de estos archivos
@@ -100,67 +125,176 @@ pip install -r requirements.txt
 
    **IMPORTANTE**: Después de instalar FFmpeg, **debe reiniciar el terminal** para que esté disponible en el PATH.
 
-## Uso
+## 🔌 API Endpoints
 
-### Iniciar la API
+### **GET /**
 
-**Opción 1: Scripts automáticos (Recomendado)**
-
-- Doble clic en `setup_and_run.bat`, `start_api.ps1` o `start_api.sh`
-
-**Opción 2: Manualmente**
+Página principal con interfaz web
 
 ```bash
-python app.py
+http://localhost:5000/
 ```
 
-La API estará disponible en: `http://localhost:5000`
+### **GET /health**
 
-### Endpoints disponibles
-
-#### GET `/`
-
-Información general de la API
-
-```bash
-curl http://localhost:5000/
-```
-
-#### GET `/health`
-
-Verificar estado de la API
+Estado de la API y modelo
 
 ```bash
 curl http://localhost:5000/health
 ```
 
-#### POST `/transcribe`
+**Respuesta:**
+
+```json
+{
+  "status": "OK",
+  "model": "medium",
+  "model_loaded": true,
+  "language": "Spanish",
+  "max_file_size": "1GB",
+  "supported_formats": ["mp3", "wav", "flac", ...]
+}
+```
+
+### **POST /transcribe**
 
 Transcribir archivo de audio
 
 **Parámetros:**
 
-- `audio` (archivo): Archivo de audio a transcribir
-- `format` (opcional): Formato de salida (`pdf` o `docx`, por defecto `pdf`)
+- `audio` (archivo): Archivo de audio/video
+- `format` (opcional): `pdf` o `docx` (default: `pdf`)
 
-**Ejemplos:**
+**Ejemplo cURL:**
 
 ```bash
 # Transcribir a PDF
-curl -X POST -F "audio=@mi_audio.mp3" http://localhost:5000/transcribe --output transcripcion.pdf
+curl -X POST \
+  -F "audio=@mi_audio.mp3" \
+  -F "format=pdf" \
+  http://localhost:5000/transcribe \
+  --output transcripcion.pdf
 
 # Transcribir a DOCX
-curl -X POST -F "audio=@mi_audio.wav" -F "format=docx" http://localhost:5000/transcribe --output transcripcion.docx
+curl -X POST \
+  -F "audio=@mi_audio.mp3" \
+  -F "format=docx" \
+  http://localhost:5000/transcribe \
+  --output transcripcion.docx
 ```
 
-## Formatos de Audio Soportados
+**Respuesta exitosa:**
 
-- **Audio:** MP3, WAV, FLAC, M4A, AAC, OGG, WMA
-- **Video:** MP4, AVI, MOV, MKV, WEBM (se extrae el audio)
+- Archivo PDF/DOCX listo para descarga
+- Headers con nombre del archivo y tipo de contenido
 
-## Configuración
+## 🌐 Interfaz Web
 
-### Modelo Whisper
+### **Interfaz Principal** (`http://localhost:5000`)
+
+- ✅ Drag & drop de archivos
+- ✅ Validación automática de formatos
+- ✅ Barra de progreso en tiempo real
+- ✅ Descarga automática
+- ✅ Estado de conexión con la API
+
+### **Cliente de Testing** (`test_client.html`)
+
+- ✅ Testing rápido de la API
+- ✅ Información detallada de respuestas
+- ✅ Modo desarrollador
+
+## 📋 Formatos Soportados
+
+### **Audio:**
+
+MP3, WAV, FLAC, M4A, AAC, OGG, WMA
+
+### **Video:**
+
+MP4, AVI, MOV, MKV, WEBM (extrae audio automáticamente)
+
+### **Salida:**
+
+PDF (profesional) | DOCX (editable)
+
+## ⚙️ Configuración Técnica
+
+### **Modelo Whisper**
+
+- **Modelo**: `medium` (769 MB)
+- **Idioma**: Español optimizado
+- **Precisión**: Excelente para español
+
+### **Límites**
+
+- **Tamaño máximo**: 1GB por archivo
+- **Tiempo de procesamiento**: ~1-3 min por hora de audio
+- **Formatos automáticos**: Conversión automática con FFmpeg
+
+## 🔧 Troubleshooting
+
+### **Problemas Comunes**
+
+**❌ "FFmpeg no encontrado"**
+
+```bash
+# Windows
+winget install ffmpeg
+# Reiniciar terminal después de instalar
+
+# Mac
+brew install ffmpeg
+
+# Linux
+sudo apt install ffmpeg
+```
+
+**❌ "API desconectada" en navegador**
+
+- Verificar que `python app.py` esté ejecutándose
+- Comprobar que no hay otro proceso en puerto 5000
+- Revisar firewall/antivirus
+
+**❌ "Modelo no cargado"**
+
+- Esperar a que termine de descargar (~769 MB primera vez)
+- Verificar conexión a internet
+- Reiniciar la aplicación
+
+**❌ Error de memoria**
+
+- Archivos muy grandes: dividir el audio
+- Cerrar otras aplicaciones pesadas
+- Usar modelo `base` en lugar de `medium`
+
+## 🚀 Deploy en Producción
+
+### **Render (Recomendado)**
+
+1. Fork/clone este repositorio
+2. Conectar a Render
+3. Deploy automático con `Procfile`
+
+### **Otros servicios**
+
+- **Heroku**: Compatible con `Procfile`
+- **Railway**: Compatible con `requirements.txt`
+- **DigitalOcean**: Usar Docker alternativo
+
+## 📞 Soporte
+
+- **🌐 Website**: [taylorasprilla.dev](https://taylorasprilla.dev)
+- **📧 Email**: contacto@taylorasprilla.dev
+- **📦 GitHub**: [AudioTranscript](https://github.com/TaylorAsprilla/AudioTranscript)
+
+---
+
+## 🎉 ¡Proyecto listo para usar!
+
+**Desarrollo local**: `start.bat` o `./start.sh`
+**Deploy**: Push a Render
+**Interfaz**: `http://localhost:5000`
 
 Por defecto se usa el modelo `base`. Puedes cambiar a otros modelos editando la línea en `app.py`:
 

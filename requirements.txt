@@ -1,5 +1,6 @@
 # Dependencias optimizadas para Render
 flask==3.1.1
+flask-cors==6.1.0
 openai-whisper==20250625
 python-docx==1.2.0
 torch==2.7.1

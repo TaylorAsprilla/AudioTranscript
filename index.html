@@ -1,0 +1,960 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AudioTranscript - Transcripción de Audio a PDF</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎙️</text></svg>"
+    />
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        padding: 20px;
+      }
+
+      .container {
+        max-width: 900px;
+        margin: 0 auto;
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+      }
+
+      .header {
+        background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+        color: white;
+        text-align: center;
+        padding: 40px 20px;
+        position: relative;
+      }
+
+      .header::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 100" fill="white" opacity="0.1"><path d="M0,0 L1000,0 L1000,60 Q500,100 0,60 Z"/></svg>');
+        background-size: cover;
+      }
+
+      .header h1 {
+        font-size: 2.5em;
+        margin-bottom: 10px;
+        position: relative;
+        z-index: 1;
+      }
+
+      .header p {
+        font-size: 1.2em;
+        opacity: 0.9;
+        position: relative;
+        z-index: 1;
+      }
+
+      .main-content {
+        padding: 40px;
+      }
+
+      .api-status {
+        background: #f8f9fa;
+        border-radius: 15px;
+        padding: 20px;
+        margin-bottom: 30px;
+        border-left: 5px solid #4caf50;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .status-info {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+      }
+
+      .status-indicator {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: #28a745;
+        animation: pulse 2s infinite;
+      }
+
+      @keyframes pulse {
+        0% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.5;
+        }
+        100% {
+          opacity: 1;
+        }
+      }
+
+      .status-offline {
+        background: #dc3545;
+      }
+
+      .refresh-btn {
+        background: #007bff;
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 14px;
+        transition: all 0.3s ease;
+      }
+
+      .refresh-btn:hover {
+        background: #0056b3;
+        transform: translateY(-1px);
+      }
+
+      .upload-section {
+        background: #f8f9fa;
+        border-radius: 15px;
+        padding: 30px;
+        margin-bottom: 30px;
+        border: 2px dashed #dee2e6;
+        text-align: center;
+        transition: all 0.3s ease;
+      }
+
+      .upload-section.dragover {
+        border-color: #4caf50;
+        background: #f0f8f0;
+      }
+
+      .upload-icon {
+        font-size: 3em;
+        margin-bottom: 20px;
+        color: #6c757d;
+      }
+
+      .file-input-wrapper {
+        position: relative;
+        display: inline-block;
+        margin: 20px 0;
+      }
+
+      .file-input {
+        position: absolute;
+        left: -9999px;
+      }
+
+      .file-input-label {
+        display: inline-block;
+        background: #4caf50;
+        color: white;
+        padding: 15px 30px;
+        border-radius: 50px;
+        cursor: pointer;
+        font-size: 16px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        border: none;
+      }
+
+      .file-input-label:hover {
+        background: #45a049;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(76, 175, 80, 0.3);
+      }
+
+      .file-info {
+        margin-top: 20px;
+        padding: 15px;
+        background: #e8f5e8;
+        border-radius: 10px;
+        display: none;
+      }
+
+      .options-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        margin: 30px 0;
+      }
+
+      .option-card {
+        background: white;
+        border: 2px solid #e9ecef;
+        border-radius: 15px;
+        padding: 20px;
+        text-align: center;
+        transition: all 0.3s ease;
+        cursor: pointer;
+      }
+
+      .option-card:hover {
+        border-color: #4caf50;
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+      }
+
+      .option-card.selected {
+        border-color: #4caf50;
+        background: #f0f8f0;
+      }
+
+      .option-icon {
+        font-size: 2em;
+        margin-bottom: 10px;
+      }
+
+      .submit-section {
+        text-align: center;
+        margin-top: 30px;
+      }
+
+      .submit-btn {
+        background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+        color: white;
+        border: none;
+        padding: 18px 40px;
+        border-radius: 50px;
+        font-size: 18px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .submit-btn:disabled {
+        background: #6c757d;
+        cursor: not-allowed;
+        transform: none;
+      }
+
+      .submit-btn:not(:disabled):hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 25px rgba(76, 175, 80, 0.3);
+      }
+
+      .progress-section {
+        display: none;
+        margin: 30px 0;
+        text-align: center;
+      }
+
+      .progress-bar {
+        width: 100%;
+        height: 8px;
+        background: #e9ecef;
+        border-radius: 4px;
+        overflow: hidden;
+        margin: 20px 0;
+      }
+
+      .progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #4caf50, #45a049);
+        width: 0%;
+        transition: width 0.3s ease;
+        border-radius: 4px;
+      }
+
+      .status-message {
+        margin: 20px 0;
+        padding: 15px 20px;
+        border-radius: 10px;
+        display: none;
+        font-weight: 500;
+      }
+
+      .status-success {
+        background: #d4edda;
+        border: 1px solid #c3e6cb;
+        color: #155724;
+      }
+
+      .status-error {
+        background: #f8d7da;
+        border: 1px solid #f5c6cb;
+        color: #721c24;
+      }
+
+      .status-info {
+        background: #d1ecf1;
+        border: 1px solid #bee5eb;
+        color: #0c5460;
+      }
+
+      .download-section {
+        display: none;
+        background: #f8f9fa;
+        border-radius: 15px;
+        padding: 30px;
+        margin-top: 20px;
+        text-align: center;
+      }
+
+      .download-btn {
+        background: #007bff;
+        color: white;
+        border: none;
+        padding: 15px 30px;
+        border-radius: 50px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        margin: 10px;
+      }
+
+      .download-btn:hover {
+        background: #0056b3;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0, 123, 255, 0.3);
+      }
+
+      .supported-formats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+        gap: 10px;
+        margin: 20px 0;
+      }
+
+      .format-tag {
+        background: #e9ecef;
+        padding: 8px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+        color: #495057;
+        text-align: center;
+      }
+
+      .features-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+        margin: 30px 0;
+      }
+
+      .feature-card {
+        background: white;
+        border-radius: 15px;
+        padding: 25px;
+        text-align: center;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+        transition: all 0.3s ease;
+      }
+
+      .feature-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+      }
+
+      .feature-icon {
+        font-size: 2.5em;
+        margin-bottom: 15px;
+      }
+
+      .footer {
+        background: #f8f9fa;
+        padding: 25px 20px;
+        text-align: center;
+        color: #6c757d;
+        font-size: 14px;
+        border-top: 1px solid #e9ecef;
+      }
+
+      .footer a {
+        color: #4caf50;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.3s ease;
+      }
+
+      .footer a:hover {
+        color: #45a049;
+        transform: translateY(-1px);
+      }
+
+      @media (max-width: 768px) {
+        .container {
+          margin: 10px;
+          border-radius: 15px;
+        }
+
+        .header h1 {
+          font-size: 2em;
+        }
+
+        .main-content {
+          padding: 20px;
+        }
+
+        .options-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .footer {
+          padding: 20px 15px;
+        }
+
+        .footer div[style*="display: flex"] {
+          flex-direction: column !important;
+          gap: 15px !important;
+        }
+
+        .footer a {
+          justify-content: center !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <!-- Header -->
+      <div class="header">
+        <h1>🎙️ AudioTranscript</h1>
+        <p>Transcripción inteligente de audio a PDF optimizada para español</p>
+      </div>
+
+      <!-- Main Content -->
+      <div class="main-content">
+        <!-- API Status -->
+        <div class="api-status">
+          <div class="status-info">
+            <div class="status-indicator" id="statusIndicator"></div>
+            <div>
+              <strong id="statusText">Verificando conexión...</strong>
+              <div
+                id="statusDetails"
+                style="font-size: 14px; color: #6c757d"
+              ></div>
+            </div>
+          </div>
+          <button class="refresh-btn" onclick="checkApiStatus()">
+            🔄 Actualizar
+          </button>
+        </div>
+
+        <!-- Features -->
+        <div class="features-grid">
+          <div class="feature-card">
+            <div class="feature-icon">🎯</div>
+            <h3>Precisión en Español</h3>
+            <p>Modelo Whisper optimizado específicamente para idioma español</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">📄</div>
+            <h3>Múltiples Formatos</h3>
+            <p>Genera documentos PDF y DOCX con metadatos completos</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">🚀</div>
+            <h3>Archivos Grandes</h3>
+            <p>Soporta archivos de hasta 1GB con procesamiento eficiente</p>
+          </div>
+        </div>
+
+        <!-- Upload Section -->
+        <div class="upload-section" id="uploadSection">
+          <div class="upload-icon">📁</div>
+          <h3>Selecciona tu archivo de audio</h3>
+          <p>Arrastra y suelta aquí o haz clic para seleccionar</p>
+
+          <div class="file-input-wrapper">
+            <input
+              type="file"
+              id="audioFile"
+              class="file-input"
+              accept="audio/*,video/*"
+            />
+            <label for="audioFile" class="file-input-label">
+              📂 Seleccionar Archivo
+            </label>
+          </div>
+
+          <div class="file-info" id="fileInfo">
+            <strong id="fileName"></strong><br />
+            <span id="fileSize"></span> | <span id="fileType"></span>
+          </div>
+        </div>
+
+        <!-- Supported Formats -->
+        <div style="text-align: center; margin: 20px 0">
+          <h4>📋 Formatos Soportados</h4>
+          <div class="supported-formats">
+            <span class="format-tag">MP3</span>
+            <span class="format-tag">WAV</span>
+            <span class="format-tag">FLAC</span>
+            <span class="format-tag">M4A</span>
+            <span class="format-tag">AAC</span>
+            <span class="format-tag">OGG</span>
+            <span class="format-tag">WMA</span>
+            <span class="format-tag">MP4</span>
+            <span class="format-tag">AVI</span>
+            <span class="format-tag">MOV</span>
+            <span class="format-tag">MKV</span>
+            <span class="format-tag">WEBM</span>
+          </div>
+        </div>
+
+        <!-- Options -->
+        <div class="options-grid">
+          <div class="option-card selected" data-format="pdf">
+            <div class="option-icon">📄</div>
+            <h4>PDF</h4>
+            <p>Documento profesional con formato limpio</p>
+          </div>
+          <div class="option-card" data-format="docx">
+            <div class="option-icon">📝</div>
+            <h4>DOCX</h4>
+            <p>Compatible con Microsoft Word</p>
+          </div>
+        </div>
+
+        <!-- Submit Section -->
+        <div class="submit-section">
+          <button
+            class="submit-btn"
+            id="submitBtn"
+            onclick="transcribeAudio()"
+            disabled
+          >
+            🚀 Iniciar Transcripción
+          </button>
+        </div>
+
+        <!-- Progress Section -->
+        <div class="progress-section" id="progressSection">
+          <h4>Procesando archivo...</h4>
+          <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+          </div>
+          <p id="progressText">
+            Esto puede tomar varios minutos dependiendo del tamaño del archivo
+          </p>
+        </div>
+
+        <!-- Status Messages -->
+        <div class="status-message" id="statusMessage"></div>
+
+        <!-- Download Section -->
+        <div class="download-section" id="downloadSection">
+          <h3>✅ ¡Transcripción Completada!</h3>
+          <p>Tu archivo ha sido procesado exitosamente</p>
+          <button class="download-btn" id="downloadBtn">
+            📥 Descargar Transcripción
+          </button>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="footer">
+        <div style="max-width: 800px; margin: 0 auto; text-align: center">
+          <div
+            style="
+              display: flex;
+              justify-content: center;
+              align-items: center;
+              gap: 20px;
+              margin-bottom: 15px;
+              flex-wrap: wrap;
+            "
+          >
+            <span style="display: flex; align-items: center; gap: 5px">
+              🤖 <strong>OpenAI Whisper Medium</strong>
+            </span>
+            <span style="display: flex; align-items: center; gap: 5px">
+              🐍 <strong>Flask + Python</strong>
+            </span>
+            <span style="display: flex; align-items: center; gap: 5px">
+              🎨 <strong>AudioTranscript v1.0</strong>
+            </span>
+          </div>
+
+          <div style="margin: 15px 0; font-size: 13px; color: #8e9aaf">
+            Transcripción inteligente de audio optimizada para español | Soporta
+            archivos hasta 1GB
+          </div>
+
+          <div
+            style="
+              display: flex;
+              justify-content: center;
+              gap: 25px;
+              margin: 15px 0;
+              flex-wrap: wrap;
+            "
+          >
+            <a
+              href="https://taylorasprilla.dev"
+              target="_blank"
+              style="
+                color: #4caf50;
+                text-decoration: none;
+                font-weight: 600;
+                display: flex;
+                align-items: center;
+                gap: 5px;
+              "
+            >
+              � taylorasprilla.dev
+            </a>
+            <a
+              href="https://github.com/TaylorAsprilla/AudioTranscript"
+              target="_blank"
+              style="
+                color: #4caf50;
+                text-decoration: none;
+                font-weight: 600;
+                display: flex;
+                align-items: center;
+                gap: 5px;
+              "
+            >
+              📦 GitHub
+            </a>
+            <a
+              href="mailto:taylor.asprilla@gmail.com"
+              style="
+                color: #4caf50;
+                text-decoration: none;
+                font-weight: 600;
+                display: flex;
+                align-items: center;
+                gap: 5px;
+              "
+            >
+              📧 Contacto
+            </a>
+          </div>
+
+          <div
+            style="
+              font-size: 12px;
+              color: #9ca3af;
+              margin-top: 15px;
+              padding-top: 15px;
+              border-top: 1px solid #e5e7eb;
+            "
+          >
+            © 2025 Taylor Asprilla | Hecho con ❤️ para la comunidad hispana
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Variables globales
+      const API_BASE_URL = (function () {
+        // Si estamos en protocolo file://, usar localhost:5000
+        if (window.location.protocol === "file:") {
+          return "http://localhost:5000";
+        }
+        // Si estamos en localhost en el navegador, usar localhost:5000
+        if (
+          window.location.hostname === "localhost" ||
+          window.location.hostname === "127.0.0.1"
+        ) {
+          return "http://localhost:5000";
+        }
+        // Para producción, usar la URL actual
+        return `${window.location.protocol}//${window.location.host}`;
+      })();
+
+      let selectedFile = null;
+      let selectedFormat = "pdf";
+      let downloadBlob = null;
+      let downloadFilename = null;
+
+      // Elementos DOM
+      const fileInput = document.getElementById("audioFile");
+      const fileInfo = document.getElementById("fileInfo");
+      const submitBtn = document.getElementById("submitBtn");
+      const uploadSection = document.getElementById("uploadSection");
+      const progressSection = document.getElementById("progressSection");
+      const downloadSection = document.getElementById("downloadSection");
+      const statusMessage = document.getElementById("statusMessage");
+
+      // Inicialización
+      document.addEventListener("DOMContentLoaded", function () {
+        checkApiStatus();
+        setupEventListeners();
+      });
+
+      // Configurar event listeners
+      function setupEventListeners() {
+        // File input change
+        fileInput.addEventListener("change", handleFileSelect);
+
+        // Format selection
+        document.querySelectorAll(".option-card").forEach((card) => {
+          card.addEventListener("click", function () {
+            document
+              .querySelectorAll(".option-card")
+              .forEach((c) => c.classList.remove("selected"));
+            this.classList.add("selected");
+            selectedFormat = this.getAttribute("data-format");
+          });
+        });
+
+        // Drag and drop
+        uploadSection.addEventListener("dragover", function (e) {
+          e.preventDefault();
+          this.classList.add("dragover");
+        });
+
+        uploadSection.addEventListener("dragleave", function (e) {
+          e.preventDefault();
+          this.classList.remove("dragover");
+        });
+
+        uploadSection.addEventListener("drop", function (e) {
+          e.preventDefault();
+          this.classList.remove("dragover");
+          const files = e.dataTransfer.files;
+          if (files.length > 0) {
+            fileInput.files = files;
+            handleFileSelect();
+          }
+        });
+      }
+
+      // Verificar estado de la API
+      async function checkApiStatus() {
+        const indicator = document.getElementById("statusIndicator");
+        const statusText = document.getElementById("statusText");
+        const statusDetails = document.getElementById("statusDetails");
+
+        try {
+          statusText.textContent = "Verificando...";
+          console.log("🔍 Verificando API en:", `${API_BASE_URL}/health`);
+
+          const response = await fetch(`${API_BASE_URL}/health`, {
+            method: "GET",
+            headers: {
+              Accept: "application/json",
+            },
+            cache: "no-cache",
+          });
+
+          console.log(
+            "📡 Respuesta recibida:",
+            response.status,
+            response.statusText
+          );
+
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          }
+
+          const data = await response.json();
+          console.log("📦 Datos recibidos:", data);
+
+          if (data.status === "OK") {
+            indicator.className = "status-indicator";
+            statusText.innerHTML = "✅ API Conectada";
+            statusDetails.textContent = `Modelo cargado: ${
+              data.model_loaded ? "Sí" : "No"
+            }`;
+            console.log("✅ API conectada exitosamente");
+          } else {
+            throw new Error("Estado no válido en respuesta");
+          }
+        } catch (error) {
+          indicator.className = "status-indicator status-offline";
+          statusText.innerHTML = "❌ API Desconectada";
+
+          // Mensajes de error más específicos
+          if (error.name === "TypeError" && error.message.includes("fetch")) {
+            statusDetails.textContent =
+              "Error de conexión - Verifique CORS y servidor";
+          } else if (error.message.includes("HTTP")) {
+            statusDetails.textContent = `Error del servidor: ${error.message}`;
+          } else {
+            statusDetails.textContent = `Error: ${error.message}`;
+          }
+
+          console.error("❌ Error de API:", error);
+          console.error("🔧 URL utilizada:", `${API_BASE_URL}/health`);
+        }
+      }
+
+      // Manejar selección de archivo
+      function handleFileSelect() {
+        const file = fileInput.files[0];
+        if (!file) return;
+
+        selectedFile = file;
+
+        // Mostrar información del archivo
+        document.getElementById("fileName").textContent = file.name;
+        document.getElementById("fileSize").textContent = formatFileSize(
+          file.size
+        );
+        document.getElementById("fileType").textContent =
+          file.type || "Desconocido";
+
+        fileInfo.style.display = "block";
+        submitBtn.disabled = false;
+        submitBtn.textContent = `🚀 Transcribir ${file.name}`;
+
+        // Validar tamaño
+        if (file.size > 1073741824) {
+          // 1GB
+          showStatusMessage(
+            "error",
+            "❌ El archivo es demasiado grande. Máximo permitido: 1GB"
+          );
+          submitBtn.disabled = true;
+          return;
+        }
+
+        hideStatusMessage();
+      }
+
+      // Iniciar transcripción
+      async function transcribeAudio() {
+        if (!selectedFile) {
+          showStatusMessage(
+            "error",
+            "❌ Por favor selecciona un archivo de audio"
+          );
+          return;
+        }
+
+        // Preparar UI
+        submitBtn.disabled = true;
+        submitBtn.textContent = "⏳ Procesando...";
+        progressSection.style.display = "block";
+        downloadSection.style.display = "none";
+        hideStatusMessage();
+
+        // Simular progreso
+        let progress = 0;
+        const progressFill = document.getElementById("progressFill");
+        const progressText = document.getElementById("progressText");
+
+        const progressInterval = setInterval(() => {
+          progress += Math.random() * 5;
+          if (progress > 90) progress = 90;
+          progressFill.style.width = progress + "%";
+        }, 1000);
+
+        try {
+          // Crear FormData
+          const formData = new FormData();
+          formData.append("audio", selectedFile);
+          formData.append("format", selectedFormat);
+
+          // Enviar petición
+          const response = await fetch(`${API_BASE_URL}/transcribe`, {
+            method: "POST",
+            body: formData,
+          });
+
+          clearInterval(progressInterval);
+          progressFill.style.width = "100%";
+
+          if (response.ok) {
+            // Obtener blob y filename
+            downloadBlob = await response.blob();
+
+            const contentDisposition = response.headers.get(
+              "Content-Disposition"
+            );
+            downloadFilename = "transcripcion." + selectedFormat;
+            if (contentDisposition) {
+              const match = contentDisposition.match(/filename="(.+)"/);
+              if (match) downloadFilename = match[1];
+            }
+
+            // Mostrar sección de descarga
+            progressSection.style.display = "none";
+            downloadSection.style.display = "block";
+
+            document.getElementById("downloadBtn").onclick = function () {
+              downloadFile();
+            };
+
+            showStatusMessage(
+              "success",
+              "✅ ¡Transcripción completada exitosamente!"
+            );
+          } else {
+            const errorData = await response.json();
+            throw new Error(errorData.error || "Error desconocido");
+          }
+        } catch (error) {
+          clearInterval(progressInterval);
+          progressSection.style.display = "none";
+          showStatusMessage("error", `❌ Error: ${error.message}`);
+          console.error("Error:", error);
+        } finally {
+          submitBtn.disabled = false;
+          submitBtn.textContent = "🚀 Iniciar Transcripción";
+        }
+      }
+
+      // Descargar archivo
+      function downloadFile() {
+        if (!downloadBlob || !downloadFilename) return;
+
+        const url = URL.createObjectURL(downloadBlob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = downloadFilename;
+        a.style.display = "none";
+
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+
+        URL.revokeObjectURL(url);
+
+        showStatusMessage(
+          "success",
+          `✅ Archivo "${downloadFilename}" descargado correctamente`
+        );
+      }
+
+      // Utilidades
+      function formatFileSize(bytes) {
+        if (bytes === 0) return "0 Bytes";
+        const k = 1024;
+        const sizes = ["Bytes", "KB", "MB", "GB"];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+      }
+
+      function showStatusMessage(type, message) {
+        statusMessage.className = `status-message status-${type}`;
+        statusMessage.textContent = message;
+        statusMessage.style.display = "block";
+
+        if (type === "success") {
+          setTimeout(hideStatusMessage, 5000);
+        }
+      }
+
+      function hideStatusMessage() {
+        statusMessage.style.display = "none";
+      }
+
+      console.log("🔗 AudioTranscript inicializado");
+      console.log("📡 API URL:", API_BASE_URL);
+    </script>
+  </body>
+</html>
