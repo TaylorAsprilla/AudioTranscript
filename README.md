@@ -4,13 +4,12 @@ Una API REST desarrollada en Flask que permite transcribir archivos de audio en 
 
 ## ✨ Características
 
-- 🎯 **Transcripción optimizada para español** con modelo Whisper Medium
-- 📁 **Múltiples formatos de audio** (MP3, WAV, FLAC, M4A, AAC, OGG, WMA, MP4, AVI, MOV, MKV, WEBM)
-- 📄 **Generación de PDF y DOCX** con metadatos profesionales
-- 🚀 **Archivos grandes** - Soporte hasta 1GB
-- 🌐 **Interfaz web moderna** con drag & drop
-- 🔧 **API REST completa** fácil de integrar
-- ☁️ **Listo para Render** - Deploy automático
+- **Transcripción optimizada para español** con modelo Whisper Medium
+- **Múltiples formatos de audio** (MP3, WAV, FLAC, M4A, AAC, OGG, WMA, MP4, AVI, MOV, MKV, WEBM)
+- **Generación de PDF y DOCX** con metadatos profesionales
+- **Archivos grandes** - Soporte hasta 1GB
+- **Interfaz web moderna** con drag & drop
+- **API REST completa** fácil de integrar
 
 ## 📁 Estructura Optimizada
 
@@ -268,24 +267,10 @@ sudo apt install ffmpeg
 - Cerrar otras aplicaciones pesadas
 - Usar modelo `base` en lugar de `medium`
 
-## 🚀 Deploy en Producción
-
-### **Render (Recomendado)**
-
-1. Fork/clone este repositorio
-2. Conectar a Render
-3. Deploy automático con `Procfile`
-
-### **Otros servicios**
-
-- **Heroku**: Compatible con `Procfile`
-- **Railway**: Compatible con `requirements.txt`
-- **DigitalOcean**: Usar Docker alternativo
-
 ## 📞 Soporte
 
 - **🌐 Website**: [taylorasprilla.dev](https://taylorasprilla.dev)
-- **📧 Email**: contacto@taylorasprilla.dev
+- **📧 Email**: taylor.asprilla@gmail.com
 - **📦 GitHub**: [AudioTranscript](https://github.com/TaylorAsprilla/AudioTranscript)
 
 ---
