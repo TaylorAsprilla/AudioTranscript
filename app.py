@@ -562,11 +562,19 @@ if __name__ == '__main__':
     print("\nEjemplo de uso:")
     print("  curl -X POST -F 'audio=@archivo.mp3' -F 'format=pdf' http://localhost:5000/transcribe")
     
-    # Configuración específica para Render
-    port = int(os.environ.get('PORT', 5000))  # Render usa puerto 5000
-    debug_mode = os.environ.get('FLASK_ENV') == 'development'
+    # Configuración específica para desarrollo local y Render
+    port = int(os.environ.get('PORT', 5000))
+    debug_mode = os.environ.get('FLASK_ENV', 'production') == 'development'
     
     print(f"Iniciando servidor en puerto: {port}")
     print(f"Modo debug: {debug_mode}")
     
-    app.run(debug=debug_mode, host='0.0.0.0', port=port)
+    # Solo ejecutar app.run() en desarrollo local
+    # En producción (Render) se usa Gunicorn
+    if os.environ.get('RENDER') != '1':
+        app.run(debug=debug_mode, host='0.0.0.0', port=port)
+else:
+    # Para Gunicorn - configuración de producción
+    print("Ejecutándose con Gunicorn en producción")
+    print("Modelo Whisper cargado:", MODEL)
+    print("CORS habilitado para todos los orígenes")
