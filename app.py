@@ -18,12 +18,16 @@ from reportlab.lib.enums import TA_JUSTIFY, TA_LEFT
 from reportlab.lib.units import inch
 import datetime
 import logging
+from dotenv import load_dotenv
+
+# Cargar variables de entorno desde .env
+load_dotenv()
 
 # Configurar logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-MODEL = "medium"  # Usar modelo medium para excelente precisión en español
-# Las opciones del modelo son: tiny, base, small, medium, large
+# Leer modelo desde variable de entorno o usar 'base' por defecto
+MODEL = os.environ.get("WHISPER_MODEL", "base")  # tiny, base, small, medium, large
 
 def check_ffmpeg():
     """Verificar si FFmpeg está disponible"""
