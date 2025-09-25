@@ -360,6 +360,18 @@
             throw new Error(`HTTP ${response.status}: ${response.statusText}`);
           }
 
+          const ct = response.headers.get("content-type") || "";
+          if (!ct.includes("application/json")) {
+            const text = await response.text();
+            throw new Error(
+              `Respuesta no-JSON desde /health. Posible proxy/error de plataforma. Detalles: ${
+                text && text.trim().startsWith("<")
+                  ? "Se recibió HTML (p.ej. página 502/404)."
+                  : text?.substring(0, 200) || "(sin cuerpo)"
+              }`
+            );
+          }
+
           const data = await response.json();
           console.log("📦 Datos recibidos:", data);
 
@@ -494,8 +506,27 @@
               "✅ ¡Transcripción completada exitosamente!"
             );
           } else {
-            const errorData = await response.json();
-            throw new Error(errorData.error || "Error desconocido");
+            // Intentar leer error como JSON; si no es JSON, leer como texto
+            const contentType = response.headers.get("content-type") || "";
+            let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+            try {
+              if (contentType.includes("application/json")) {
+                const errorData = await response.json();
+                errorMessage = errorData.error || errorMessage;
+              } else {
+                const text = await response.text();
+                // Si el servidor devolvió HTML (p. ej., <!DOCTYPE ...>), dar un mensaje más claro
+                if (text && text.trim().startsWith("<")) {
+                  errorMessage += " - El servidor devolvió una página HTML (posible 502/404/500 en Render).";
+                } else if (text) {
+                  errorMessage += ` - ${text.substring(0, 500)}`;
+                }
+              }
+            } catch (parseErr) {
+              // Si falla el parseo, mantener el mensaje base
+              console.warn("No se pudo parsear el cuerpo de error:", parseErr);
+            }
+            throw new Error(errorMessage);
           }
         } catch (error) {
           clearInterval(progressInterval);

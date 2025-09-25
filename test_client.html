@@ -365,9 +365,23 @@
                 }, 500);
               });
             } else {
-              return response.json().then((errorData) => {
-                throw new Error(errorData.error || "Error desconocido");
-              });
+              const contentType = response.headers.get("content-type") || "";
+              if (contentType.includes("application/json")) {
+                return response.json().then((errorData) => {
+                  throw new Error(errorData.error || "Error desconocido");
+                });
+              } else {
+                return response.text().then((text) => {
+                  let msg = `HTTP ${response.status}: ${response.statusText}`;
+                  if (text && text.trim().startsWith("<")) {
+                    msg +=
+                      " - El servidor devolvió una página HTML (posible 502/404/500 o error de plataforma).";
+                  } else if (text) {
+                    msg += ` - ${text.substring(0, 500)}`;
+                  }
+                  throw new Error(msg);
+                });
+              }
             }
           })
           .catch((error) => {
