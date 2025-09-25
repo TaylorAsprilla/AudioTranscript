@@ -517,7 +517,8 @@
                 const text = await response.text();
                 // Si el servidor devolvió HTML (p. ej., <!DOCTYPE ...>), dar un mensaje más claro
                 if (text && text.trim().startsWith("<")) {
-                  errorMessage += " - El servidor devolvió una página HTML (posible 502/404/500 en Render).";
+                  errorMessage +=
+                    " - El servidor devolvió una página HTML (posible 502/404/500 en Render).";
                 } else if (text) {
                   errorMessage += ` - ${text.substring(0, 500)}`;
                 }
