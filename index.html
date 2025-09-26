@@ -123,6 +123,132 @@
           </div>
         </div>
 
+        <!-- Language & Mode -->
+        <div
+          style="
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: flex-end;
+            margin: 25px 0;
+          "
+        >
+          <div style="flex: 1; min-width: 200px">
+            <label style="font-weight: 600; display: block; margin-bottom: 6px"
+              >🌐 Idioma</label
+            >
+            <select
+              id="languageSelect"
+              style="
+                width: 100%;
+                padding: 10px;
+                border: 1px solid #ccc;
+                border-radius: 8px;
+              "
+            >
+              <option value="spanish" selected>Español (forzado)</option>
+              <option value="english">Inglés</option>
+              <option value="portuguese">Portugués</option>
+              <option value="french">Francés</option>
+              <option value="german">Alemán</option>
+              <option value="italian">Italiano</option>
+              <option value="auto">Detección automática</option>
+            </select>
+          </div>
+          <div style="flex: 1; min-width: 220px">
+            <label style="font-weight: 600; display: block; margin-bottom: 6px"
+              >⚙️ Modo de Procesamiento</label
+            >
+            <select
+              id="modeSelect"
+              style="
+                width: 100%;
+                padding: 10px;
+                border: 1px solid #ccc;
+                border-radius: 8px;
+              "
+            >
+              <option value="sync" selected>Directo (espera respuesta)</option>
+              <option value="async">Cola (asíncrono)</option>
+            </select>
+            <small style="color: #6c757d"
+              >Usa cola si el audio es largo o el modelo es grande</small
+            >
+          </div>
+          <div style="flex: 1; min-width: 200px">
+            <label style="font-weight: 600; display: block; margin-bottom: 6px"
+              >🧠 Modelo Activo</label
+            >
+            <div
+              id="modelInfo"
+              style="
+                padding: 10px;
+                border: 1px solid #e0e0e0;
+                border-radius: 8px;
+                background: #fafafa;
+                font-size: 13px;
+                min-height: 48px;
+                display: flex;
+                align-items: center;
+              "
+            >
+              (cargando...)
+            </div>
+          </div>
+        </div>
+
+        <!-- Panel Diagnóstico -->
+        <details
+          id="diagnosticsPanel"
+          style="
+            margin: 10px 0 25px;
+            background: #f8f9fa;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 14px;
+          "
+        >
+          <summary
+            style="
+              cursor: pointer;
+              font-weight: 600;
+              display: flex;
+              align-items: center;
+              gap: 6px;
+            "
+          >
+            🔎 Panel de Diagnóstico
+          </summary>
+          <div
+            id="diagContent"
+            style="
+              margin-top: 12px;
+              font-size: 13px;
+              line-height: 1.4;
+              color: #333;
+              white-space: pre-wrap;
+              overflow-x: auto;
+              max-height: 260px;
+            "
+          ></div>
+          <button
+            type="button"
+            id="refreshDiagBtn"
+            style="
+              margin-top: 10px;
+              padding: 6px 14px;
+              background: #4caf50;
+              color: #fff;
+              border: none;
+              border-radius: 6px;
+              cursor: pointer;
+              font-size: 13px;
+            "
+          >
+            Actualizar
+          </button>
+        </details>
+
         <!-- Submit Section -->
         <div class="submit-section">
           <button
@@ -278,6 +404,9 @@
       let selectedFormat = "pdf";
       let downloadBlob = null;
       let downloadFilename = null;
+      let currentJobId = null;
+      let asyncPollingTimer = null;
+      let queueEnabled = false;
 
       // Elementos DOM
       const fileInput = document.getElementById("audioFile");
@@ -291,6 +420,7 @@
       // Inicialización
       document.addEventListener("DOMContentLoaded", function () {
         checkApiStatus();
+        fetchApiInfo();
         setupEventListeners();
       });
 
@@ -330,6 +460,46 @@
             handleFileSelect();
           }
         });
+
+        const refreshDiagBtn = document.getElementById("refreshDiagBtn");
+        refreshDiagBtn.addEventListener("click", fetchApiInfo);
+      }
+
+      async function fetchApiInfo() {
+        try {
+          const res = await fetch(`${API_BASE_URL}/api`, { cache: "no-cache" });
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const data = await res.json();
+          queueEnabled = !!data.queue_enabled;
+          const modelInfoDiv = document.getElementById("modelInfo");
+          modelInfoDiv.textContent =
+            data.model_active + (data.lazy_loaded ? "" : " (no cargado aún)");
+          const diag = {
+            model_requested: data.model_requested,
+            model_active: data.model_active,
+            lazy_loaded: data.lazy_loaded,
+            languages_supported: data.languages_supported,
+            queue_enabled: data.queue_enabled,
+            chunk_seconds: data.chunk_seconds,
+            supported_formats: data.supported_formats,
+            max_file_size: data.max_file_size,
+            endpoints: data.endpoints,
+          };
+          document.getElementById("diagContent").textContent = JSON.stringify(
+            diag,
+            null,
+            2
+          );
+          if (!data.queue_enabled) {
+            const modeSelect = document.getElementById("modeSelect");
+            modeSelect.value = "sync";
+            modeSelect.disabled = true;
+          }
+        } catch (e) {
+          document.getElementById("modelInfo").textContent =
+            "Error obteniendo info";
+          console.error("Error API info:", e);
+        }
       }
 
       // Verificar estado de la API
@@ -470,15 +640,46 @@
           const formData = new FormData();
           formData.append("audio", selectedFile);
           formData.append("format", selectedFormat);
+          formData.append(
+            "lang",
+            document.getElementById("languageSelect").value
+          );
+          const mode = document.getElementById("modeSelect").value;
 
           // Enviar petición
-          const response = await fetch(`${API_BASE_URL}/transcribe`, {
-            method: "POST",
-            body: formData,
-          });
+          let response;
+          if (mode === "async" && queueEnabled) {
+            response = await fetch(`${API_BASE_URL}/transcribe_async`, {
+              method: "POST",
+              body: formData,
+            });
+          } else {
+            response = await fetch(`${API_BASE_URL}/transcribe`, {
+              method: "POST",
+              body: formData,
+            });
+          }
 
           clearInterval(progressInterval);
           progressFill.style.width = "100%";
+
+          if (
+            response.ok &&
+            response.headers
+              .get("content-type")
+              ?.includes("application/json") &&
+            document.getElementById("modeSelect").value === "async"
+          ) {
+            // Respuesta de job async
+            const data = await response.json();
+            if (data.job_id) {
+              currentJobId = data.job_id;
+              progressFill.style.width = "2%";
+              progressText.textContent = "Tarea en cola...";
+              pollAsyncJob();
+              return; // no continuar con descarga directa
+            }
+          }
 
           if (response.ok) {
             // Obtener blob y filename
@@ -537,6 +738,62 @@
         } finally {
           submitBtn.disabled = false;
           submitBtn.textContent = "🚀 Iniciar Transcripción";
+        }
+      }
+
+      async function pollAsyncJob() {
+        if (!currentJobId) return;
+        try {
+          const res = await fetch(`${API_BASE_URL}/jobs/${currentJobId}`, {
+            cache: "no-cache",
+          });
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const data = await res.json();
+          if (data.status === "processing") {
+            const pct = data.progress || 5;
+            document.getElementById("progressFill").style.width = pct + "%";
+            document.getElementById(
+              "progressText"
+            ).textContent = `Procesando (${pct}%)...`;
+          } else if (data.status === "done") {
+            document.getElementById("progressFill").style.width = "100%";
+            document.getElementById("progressText").textContent = "Completado";
+            // Descargar
+            const dl = await fetch(
+              `${API_BASE_URL}/jobs/${currentJobId}/download`
+            );
+            if (dl.ok) {
+              downloadBlob = await dl.blob();
+              downloadFilename =
+                dl.headers
+                  .get("Content-Disposition")
+                  ?.match(/filename="(.+)"/)?.[1] ||
+                "transcripcion." + selectedFormat;
+              progressSection.style.display = "none";
+              downloadSection.style.display = "block";
+              document.getElementById("downloadBtn").onclick = function () {
+                downloadFile();
+              };
+              showStatusMessage("success", "✅ ¡Transcripción completada!");
+            } else {
+              showStatusMessage("error", "Error al descargar el resultado");
+            }
+            currentJobId = null;
+            return;
+          } else if (data.status === "error") {
+            showStatusMessage(
+              "error",
+              "❌ Error: " + (data.error || "Fallo en tarea")
+            );
+            progressSection.style.display = "none";
+            currentJobId = null;
+            return;
+          }
+        } catch (e) {
+          console.error("Error polling job:", e);
+        }
+        if (currentJobId) {
+          asyncPollingTimer = setTimeout(pollAsyncJob, 2500);
         }
       }
 
